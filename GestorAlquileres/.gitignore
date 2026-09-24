@@ -1,0 +1,5 @@
+data
+.idea/
+backend/target/
+node_modules
+package-lock.json

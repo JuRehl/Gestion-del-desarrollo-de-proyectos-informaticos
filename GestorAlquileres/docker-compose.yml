@@ -1,0 +1,68 @@
+services:
+  backend:
+    container_name: tp-backend
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      APP_CORS_ORIGINS: "${EXTERNAL_URL:-http://localhost:5173}"
+      APP_RECEIPTS_DIR: /app/uploads/receipts
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: gestion
+      DB_USER: gestion_user
+      DB_PASSWORD: "${DB_APP_PASSWORD:-gestion_pass}"
+    volumes:
+      - receipts-data:/app/uploads
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  frontend:
+    container_name: tp-frontend
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "${INGRESS_PORT:-5173}:80"
+    networks:
+      - app-network
+
+  adminer:
+    container_name: tp-adminer
+    image: adminer:4.8.1
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      - db
+    ports:
+      - "${ADMINER_EXTERNAL_PORT:-8081}:8080"
+    networks:
+      - app-network
+
+  db:
+    container_name: tp-db
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gestion
+      POSTGRES_USER: gestion_user
+      POSTGRES_PASSWORD: "${DB_APP_PASSWORD:-gestion_pass}"
+    ports:
+      - "${DB_EXTERNAL_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+  receipts-data:
+
+networks:
+  app-network:
+    driver: bridge
